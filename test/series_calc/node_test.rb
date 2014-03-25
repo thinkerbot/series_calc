@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require File.expand_path("../../helper", __FILE__)
 require "series_calc/node"
 
@@ -16,10 +17,20 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
     assert_equal [child], parent.children
   end
 
-  def test_attach_parents_raises_error_when_a_cycle_is_detected
-    node = Node.new "node"
+  def test_attach_parents_raises_error_if_attached_to_self
+    node = Node.new("node")
     err = assert_raises(RuntimeError) { node.attach_parents(node) }
-    assert_equal 'cannot attach parents: ["node"] (cycle detected)', err.message
+    assert_equal 'cycle detected: "node" -> "node"', err.message
+  end
+
+  def test_attach_parents_raises_error_if_cycle_is_detected
+    a, b, c = %w{a b c}.map {|name| Node.new(name) }
+
+    c.attach_parents(b)
+    b.attach_parents(a)
+
+    err = assert_raises(RuntimeError) { a.attach_parents(c) }
+    assert_equal 'cycle detected: "a" -> "c" -> "b" -> "a"', err.message
   end
 
   #
@@ -54,10 +65,20 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
     assert_equal [parent], child.parents
   end
 
-  def test_attach_children_raises_error_when_a_cycle_is_detected
-    node = Node.new "node"
+  def test_attach_children_raises_error_if_attached_to_self
+    node = Node.new("node")
     err = assert_raises(RuntimeError) { node.attach_children(node) }
-    assert_equal 'cannot attach children: ["node"] (cycle detected)', err.message
+    assert_equal 'cycle detected: "node" -> "node"', err.message
+  end
+
+  def test_attach_children_raises_error_if_cycle_is_detected
+    a, b, c = %w{a b c}.map {|name| Node.new(name) }
+
+    a.attach_children(b)
+    b.attach_children(c)
+
+    err = assert_raises(RuntimeError) { c.attach_children(a) }
+    assert_equal 'cycle detected: "c" -> "a" -> "b" -> "c"', err.message
   end
 
   #
@@ -81,34 +102,36 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
   end
 
   #
-  # ancestors
+  # each_at_and_above
   #
 
-  def test_ancestors_yields_all_ancestors_of_node
-    ancestors = %w{a0 a1 a2 a3 b0 b1}
-    a0, a1, a2, a3, b0, b1, c0 = ancestors.map {|name| Node.new(name) }
-    c0 = Node.new('c0')
+  def test_each_at_and_above_yields_self_and_all_ancestors
+    nodes = %w{a0 a1 a2 a3 b0 b1 c0}
+    a0, a1, a2, a3, b0, b1, c0 = nodes.map {|name| Node.new(name) }
 
     c0.attach_parents(b0, b1)
     b0.attach_parents(a0, a1)
     b1.attach_parents(a2, a3)
 
-    assert_equal ancestors, c0.ancestors.to_a.map(&:name).sort
+    assert_equal %w{a0 a1 a2 a3 b0 b1 c0}, c0.each_at_and_above.map(&:name).sort
+    assert_equal %w{a0 a1 b0}, b0.each_at_and_above.map(&:name).sort
+    assert_equal %w{a0}, a0.each_at_and_above.map(&:name).sort
   end
 
   #
-  # descendants
+  # each_at_and_below
   #
 
-  def test_descendants_yields_all_descendants_of_node
-    descendants = %w{b0 b1 c0 c1 c2 c3}
-    a0 = Node.new('a0')
-    b0, b1, c0, c1, c2, c3 = descendants.map {|name| Node.new(name) }
+  def test_each_at_and_below_yields_self_and_all_descendants
+    nodes = %w{a0 b0 b1 c0 c1 c2 c3}
+    a0, b0, b1, c0, c1, c2, c3 = nodes.map {|name| Node.new(name) }
 
     a0.attach_children(b0, b1)
     b0.attach_children(c0, c1)
     b1.attach_children(c2, c3)
 
-    assert_equal descendants, a0.descendants.to_a.map(&:name).sort
+    assert_equal %w{a0 b0 b1 c0 c1 c2 c3}, a0.each_at_and_below.map(&:name).sort
+    assert_equal %w{b0 c0 c1}, b0.each_at_and_below.map(&:name).sort
+    assert_equal %w{c0}, c0.each_at_and_below.map(&:name).sort
   end
 end

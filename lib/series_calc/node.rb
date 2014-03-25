@@ -10,57 +10,49 @@ module SeriesCalc
       @children = []
     end
 
-    def ancestors(&block)
+    def each_at_and_above(&block)
       unless block_given?
-        return enum_for(:ancestors)
+        return enum_for(:each_at_and_above)
       end
 
+      yield self
       parents.each do |parent|
-        yield parent
-        parent.ancestors(&block)
+        parent.each_at_and_above(&block)
       end
       self
     end
 
-    def ancestors_and_self(&block)
+    def each_at_and_below(&block)
       unless block_given?
-        return enum_for(:ancestors_and_self)
+        return enum_for(:each_at_and_below)
       end
+
       yield self
-      ancestors(&block)
-    end
-
-    def descendants(&block)
-      unless block_given?
-        return enum_for(:descendants)
-      end
-
       children.each do |child|
-        yield child
-        child.descendants(&block)
+        child.each_at_and_below(&block)
       end
       self
     end
 
-    def descendants_and_self(&block)
-      unless block_given?
-        return enum_for(:descendants_and_self)
-      end
-      yield self
-      descendants(&block)
+    def walk_parents(&block) # :yields: node, path
+      walk(:parents, &block)
+    end
+
+    def walk_children(&block) # :yields: node, path
+      walk(:children, &block)
     end
 
     def attach_parents(*parents)
       new_parents = parents - self.parents
-      cyclics = descendants_and_self.to_a & new_parents
-
-      if cyclics.any?
-        raise "cannot attach parents: #{cyclics.map(&:name).inspect} (cycle detected)"
-      end
-
       new_parents.each do |parent|
         self.attach_parent(parent)
         parent.attach_child(self)
+      end
+
+      walk_parents do |node, path|
+        if node == self
+          raise "cycle detected: #{path.map(&:name).map(&:inspect).join(' -> ')}"
+        end
       end
     end
 
@@ -74,15 +66,15 @@ module SeriesCalc
 
     def attach_children(*children)
       new_children = children - self.children
-      cyclics = ancestors_and_self.to_a & new_children
-
-      if cyclics.any?
-        raise "cannot attach children: #{cyclics.map(&:name).inspect} (cycle detected)"
-      end
-
       new_children.each do |child|
         child.attach_parent(self)
         self.attach_child(child)
+      end
+
+      walk_children do |node, path|
+        if node == self
+          raise "cycle detected: #{path.map(&:name).map(&:inspect).join(' -> ')}"
+        end
       end
     end
 
@@ -95,6 +87,15 @@ module SeriesCalc
     end
 
     protected
+
+    def walk(method_name, path = [self], &block)
+      send(method_name).each do |node|
+        path.push node
+        block.call(node, path)
+        node.walk(method_name, path, &block)
+        path.pop
+      end
+    end
 
     def attach_parent(parent)
       parents << parent
