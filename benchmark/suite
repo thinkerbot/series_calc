@@ -1,0 +1,5 @@
+#!/bin/bash
+find benchmark -name '*_bench.rb' |
+while read file
+do bundle exec "$file"
+done

@@ -37,7 +37,7 @@ module SeriesCalc
 
       children.each do |child|
         child.values.each_pair do |key, value|
-          if current = values[key]
+          if current = values[key] += value
             values[key] = current + value
           else
             values[key] = value
