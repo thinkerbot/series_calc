@@ -1,17 +1,22 @@
 require 'series_calc/node'
-require 'series_calc/calculator'
 
 module SeriesCalc
   class Term < Node
-    attr_reader :data
-    attr_reader :calculator
+    class << self
+      def subclass(&block)
+        subclass = Class.new(Term)
+        subclass.send(:define_method, :calculate_value, &block)
+        subclass
+      end
+    end
 
-    def initialize(name = nil, data = {}, &calculator)
+    attr_reader :data
+
+    def initialize(name = nil, data = {})
       super(name)
+      @dependents = nil
       @data = data
-      @dependencies = nil
-      @values = nil
-      @calculator = calculator || Calculator.new
+      @value = nil
     end
 
     def recalculate_dependents
@@ -19,38 +24,24 @@ module SeriesCalc
     end
 
     def dependents
-      @dependents ||= each_at_and_above.to_a.uniq
-    end
-
-    def recalculate_value
-      @values = nil
-    end
-
-    def values
-      @values ||= calculate_values
-    end
-
-    def calculate_values
-      values = {}
-
-      calculator.call(data, values)
-
-      children.each do |child|
-        child.values.each_pair do |key, value|
-          if current = values[key] += value
-            values[key] = current + value
-          else
-            values[key] = value
-          end
-        end
-      end
-
-      values
+      @dependents ||= each_at_and_above.to_a.uniq.freeze
     end
 
     def data=(new_data)
       @data = new_data
       dependents.each(&:recalculate_value)
+    end
+
+    def recalculate_value
+      @value = nil
+    end
+
+    def value
+      @value ||= calculate_value
+    end
+
+    def calculate_value
+      raise NotImplementedError
     end
 
     def attach_parents(*parents)
