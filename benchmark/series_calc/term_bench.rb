@@ -2,14 +2,18 @@
 require File.expand_path("../../helper", __FILE__)
 require "series_calc/term"
 
-class ZeroTerm < SeriesCalc::Term
+class Count < SeriesCalc::Term
   def calculate_value
-    0
+    value = data[:offset] || 1
+    children.each do |child|
+      value += child.value
+    end
+    value
   end
 end
 
 Benchmark.bm(35) do |bm|
-  n = 100
+  n = 100 * 25
   nk = n * 1000
   tries = 3
 
@@ -18,14 +22,14 @@ Benchmark.bm(35) do |bm|
   z = 10
   m = (x * y * z) / 1000
 
-  head = ZeroTerm.new
-  tail = ZeroTerm.new
+  head = Count.new('head')
+  tail = Count.new('tail')
   hc = x.times.map do |xi|
-    xn = ZeroTerm.new("#{xi}")
+    xn = Count.new("#{xi}")
     xc = y.times.map do |yi|
-      yn = ZeroTerm.new("#{xi}-#{yi}")
+      yn = Count.new("#{xi}-#{yi}")
       yc = z.times.map do |zi|
-        ZeroTerm.new("#{xi}-#{yi}-#{zi}").attach_children(tail)
+        Count.new("#{xi}-#{yi}-#{zi}").attach_children(tail)
       end
       yn.attach_children(*yc)
     end
@@ -34,17 +38,17 @@ Benchmark.bm(35) do |bm|
   head.attach_children(*hc)
 
   tries.times do |try|
-    bm.report("#{n} #{m}k-tree mark (#{try})") do
-      n.times do
-        tail.dependents.each(&:recalculate_value)
+    bm.report("#{n} #{m}k-tree data (#{try})") do
+      n.times do |i|
+        tail.data = {:offset => i}
       end
     end
   end
 
   tries.times do |try|
-    bm.report("#{n} #{m}k-tree mark+value (#{try})") do
-      n.times do
-        tail.dependents.each(&:recalculate_value)
+    bm.report("#{n} #{m}k-tree data+value (#{try})") do
+      n.times do |i|
+        tail.data = {:offset => i}
         head.value
       end
     end
