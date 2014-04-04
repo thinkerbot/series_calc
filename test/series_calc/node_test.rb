@@ -24,7 +24,7 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
   end
 
   def test_attach_parents_raises_error_if_cycle_is_detected
-    a, b, c = %w{a b c}.map {|name| Node.new(name) }
+    a, b, c = %w{a b c}.map {|identifier| Node.new(identifier) }
 
     c.attach_parents(b)
     b.attach_parents(a)
@@ -72,7 +72,7 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
   end
 
   def test_attach_children_raises_error_if_cycle_is_detected
-    a, b, c = %w{a b c}.map {|name| Node.new(name) }
+    a, b, c = %w{a b c}.map {|identifier| Node.new(identifier) }
 
     a.attach_children(b)
     b.attach_children(c)
@@ -107,15 +107,15 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
 
   def test_each_at_and_above_yields_self_and_all_ancestors
     nodes = %w{a0 a1 a2 a3 b0 b1 c0}
-    a0, a1, a2, a3, b0, b1, c0 = nodes.map {|name| Node.new(name) }
+    a0, a1, a2, a3, b0, b1, c0 = nodes.map {|identifier| Node.new(identifier) }
 
     c0.attach_parents(b0, b1)
     b0.attach_parents(a0, a1)
     b1.attach_parents(a2, a3)
 
-    assert_equal %w{a0 a1 a2 a3 b0 b1 c0}, c0.each_at_and_above.map(&:name).sort
-    assert_equal %w{a0 a1 b0}, b0.each_at_and_above.map(&:name).sort
-    assert_equal %w{a0}, a0.each_at_and_above.map(&:name).sort
+    assert_equal %w{a0 a1 a2 a3 b0 b1 c0}, c0.each_at_and_above.map(&:identifier).sort
+    assert_equal %w{a0 a1 b0}, b0.each_at_and_above.map(&:identifier).sort
+    assert_equal %w{a0}, a0.each_at_and_above.map(&:identifier).sort
   end
 
   #
@@ -124,14 +124,14 @@ class SeriesCalc::NodeTest < Test::Unit::TestCase
 
   def test_each_at_and_below_yields_self_and_all_descendants
     nodes = %w{a0 b0 b1 c0 c1 c2 c3}
-    a0, b0, b1, c0, c1, c2, c3 = nodes.map {|name| Node.new(name) }
+    a0, b0, b1, c0, c1, c2, c3 = nodes.map {|identifier| Node.new(identifier) }
 
     a0.attach_children(b0, b1)
     b0.attach_children(c0, c1)
     b1.attach_children(c2, c3)
 
-    assert_equal %w{a0 b0 b1 c0 c1 c2 c3}, a0.each_at_and_below.map(&:name).sort
-    assert_equal %w{b0 c0 c1}, b0.each_at_and_below.map(&:name).sort
-    assert_equal %w{c0}, c0.each_at_and_below.map(&:name).sort
+    assert_equal %w{a0 b0 b1 c0 c1 c2 c3}, a0.each_at_and_below.map(&:identifier).sort
+    assert_equal %w{b0 c0 c1}, b0.each_at_and_below.map(&:identifier).sort
+    assert_equal %w{c0}, c0.each_at_and_below.map(&:identifier).sort
   end
 end

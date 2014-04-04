@@ -8,12 +8,26 @@ module SeriesCalc
         subclass.send(:define_method, :calculate_value, &block)
         subclass
       end
+
+      def components
+        @components ||= {}
+      end
+
+      def uses(component_name, term_class = nil, &block)
+        index = component_terms.length
+        components[component_name] = term_class || subclass(&block)
+        class_eval %{
+          def #{component_name}
+            children[#{index}] or raise "#{component_name} term has not been attached"
+          end
+        }
+      end
     end
 
     attr_reader :data
 
-    def initialize(name = nil, data = {})
-      super(name)
+    def initialize(identifier = nil, data = nil)
+      super(identifier)
       @dependents = nil
       @data = data
       @value = nil
@@ -34,6 +48,10 @@ module SeriesCalc
 
     def recalculate_value
       @value = nil
+    end
+
+    def recalculate_value?
+      @value.nil?
     end
 
     def value

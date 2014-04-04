@@ -4,7 +4,7 @@ require "series_calc/term"
 
 class Count < SeriesCalc::Term
   def calculate_value
-    value = data[:offset] || 1
+    value = data ? data[:offset] : 1
     children.each do |child|
       value += child.value
     end
@@ -13,7 +13,7 @@ class Count < SeriesCalc::Term
 end
 
 Benchmark.bm(35) do |bm|
-  n = 100 * 25
+  n = 100
   nk = n * 1000
   tries = 3
 

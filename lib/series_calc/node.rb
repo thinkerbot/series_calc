@@ -1,11 +1,11 @@
 module SeriesCalc
   class Node
-    attr_reader :name
+    attr_reader :identifier
     attr_reader :parents
     attr_reader :children
 
-    def initialize(name = nil)
-      @name = name
+    def initialize(identifier = nil)
+      @identifier = identifier
       @parents  = []
       @children = []
     end
@@ -51,7 +51,7 @@ module SeriesCalc
 
       walk_parents do |node, path|
         if node == self
-          raise "cycle detected: #{path.map(&:name).map(&:inspect).join(' -> ')}"
+          raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
         end
       end
     end
@@ -73,7 +73,7 @@ module SeriesCalc
 
       walk_children do |node, path|
         if node == self
-          raise "cycle detected: #{path.map(&:name).map(&:inspect).join(' -> ')}"
+          raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
         end
       end
     end
