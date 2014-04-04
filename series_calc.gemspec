@@ -10,6 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["simon.a.chiang@gmail.com"]
   spec.description   = %q{Calculate a series}
   spec.summary       = %q{}
+  spec.license       = 'MIT'
 
   spec.files         = []
   spec.executables   = []
