@@ -6,7 +6,7 @@ Benchmark.bm(35) do |bm|
   nk = n * 1000
   tries = 3
 
-  m = 11
+  m = 100
   mk = m * 1000
   array = Array.new(mk)
 
