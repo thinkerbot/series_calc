@@ -1,6 +1,6 @@
 module SeriesCalc
   class Slot
-    attr_reader :time
+    attr_accessor :time
 
     def initialize(time = Time.now)
       @time = time
