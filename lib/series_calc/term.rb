@@ -36,111 +36,65 @@ module SeriesCalc
       @value = nil
     end
 
-    def walk_parents(&block) # :yields: node, path
-      walk(:parents, &block)
-    end
+    def attach_parent(new_parent)
+      parents << new_parent
+      new_parent.children << self
 
-    def walk_children(&block) # :yields: node, path
-      walk(:children, &block)
-    end
-
-    def attach_parents(*parents)
-      parents = parents - self.parents
-      parents.each do |parent|
-        self.attach_parent(parent)
-        parent.attach_child(self)
-      end
-
-      walk_parents do |node, path|
-        if node == self
+      new_parent.walk_each_at_and_above([self]) do |parent, path|
+        if parent == self
           raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
+        else
+          parent.recalculate_value
         end
-      end
-
-      parents.each do |parent|
-        parent.each_at_and_above(&:recalculate_value)
       end
       each_at_and_below(&:recalculate_dependents)
     end
 
-    def detach_parents(*parents)
-      parents = self.parents & parents
-      parents.each do |parent|
-        self.detach_parent(parent)
-        parent.detach_child(self)
-      end
+    def detach_parent(parent)
+      parents.delete(parent)
+      parent.children.delete(self)
 
-      parents.each do |parent|
-        parent.each_at_and_above(&:recalculate_value)
-      end
+      parent.each_at_and_above(&:recalculate_value)
       each_at_and_below(&:recalculate_dependents)
     end
 
-    def attach_children(*children)
-      children = children - self.children
-      children.each do |child|
-        child.attach_parent(self)
-        self.attach_child(child)
-      end
+    def attach_child(new_child)
+      children << new_child
+      new_child.parents << self
 
-      walk_children do |node, path|
-        if node == self
+      new_child.walk_each_at_and_below([self]) do |child, path|
+        if child == self
           raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
+        else
+          child.recalculate_dependents
         end
       end
-
-      children.each do |child|
-        child.each_at_and_below(&:recalculate_dependents)
-      end
       each_at_and_above(&:recalculate_value)
     end
 
-    def detach_children(*children)
-      children = self.children & children
-      children.each do |child|
-        child.detach_parent(self)
-        self.detach_child(child)
-      end
-
-      children.each do |child|
-        child.each_at_and_below(&:recalculate_dependents)
-      end
-      each_at_and_above(&:recalculate_value)
-    end
-
-    def each_at_and_above(&block)
-      unless block_given?
-        return enum_for(:each_at_and_above)
-      end
-
-      yield self
-      parents.each do |parent|
-        parent.each_at_and_above(&block)
-      end
-      self
-    end
-
-    def each_at_and_below(&block)
-      unless block_given?
-        return enum_for(:each_at_and_below)
-      end
-
-      yield self
-      children.each do |child|
-        child.each_at_and_below(&block)
-      end
-      self
+    def detach_child(child)
+      child.detach_parent(self)
     end
 
     def recalculate_dependents
       @dependents = nil
     end
 
-    def dependents
-      @dependents ||= each_at_and_above.to_a.uniq.freeze
+    def recalculate_dependents?
+      @dependents.nil?
     end
 
-    def data=(data)
+    def dependents
+      @dependents ||= begin
+        dependents = []
+        each_at_and_above do |node|
+          dependents << node
+        end
+        dependents.uniq
+      end
+    end
+
+    def set_data(data)
       @data = data
       dependents.each(&:recalculate_value)
     end
@@ -163,6 +117,20 @@ module SeriesCalc
 
     protected
 
+    def walk_each_at_and_above(path = [], &block) # :yields: node, path
+      path.push self
+      yield self, path
+      walk(:parents, path, &block)
+      path.pop
+    end
+
+    def walk_each_at_and_below(path = [], &block) # :yields: node, path
+      path.push self
+      yield self, path
+      walk(:children, path, &block)
+      path.pop
+    end
+
     def walk(method_name, path = [self], &block)
       send(method_name).each do |node|
         path.push node
@@ -172,20 +140,20 @@ module SeriesCalc
       end
     end
 
-    def attach_parent(parent)
-      parents << parent
+    def each_at_and_above(&block)
+      yield self
+      parents.each do |parent|
+        parent.each_at_and_above(&block)
+      end
+      self
     end
 
-    def detach_parent(parent)
-      parents.delete(parent)
-    end
-
-    def attach_child(child)
-      children << child
-    end
-
-    def detach_child(child)
-      children.delete(child)
+    def each_at_and_below(&block)
+      yield self
+      children.each do |child|
+        child.each_at_and_below(&block)
+      end
+      self
     end
   end
 end
