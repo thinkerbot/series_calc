@@ -341,7 +341,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   class CountFromData < Term
     def calculate_value
-      value = data ? data[:count] : 0
+      value = data[:count] || 0
       children.each do |child|
         value += child.value
       end
@@ -371,5 +371,51 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
     assert_equal(3, a.value)
     assert_equal(3, b.value)
     assert_equal(2, c.value)
+  end
+
+  class TermWithLinkages < Term
+    parent :a, 'one'
+    child  :b, 'two'
+  end
+
+  def test_set_data_manages_linkages_via_terms
+    t = TermWithLinkages.new('t')
+    a, b = %w{a b}.map {|identifier| Term.new(identifier) }
+
+    assert_equal nil, t.a
+    assert_equal nil, t.b
+    assert_equal [[], []], [t.parents, t.children]
+    assert_equal [[], []], [a.parents, a.children]
+    assert_equal [[], []], [b.parents, b.children]
+
+    data  = {'one' => 'A', 'two' => 'B'}
+    terms = {'A' => a, 'B' => b}
+    t.set_data(data, terms)
+
+    assert_equal a, t.a
+    assert_equal b, t.b
+    assert_equal [[a], [b]], [t.parents, t.children]
+    assert_equal [[ ], [t]], [a.parents, a.children]
+    assert_equal [[t], [ ]], [b.parents, b.children]
+
+    data  = {'one' => 'B', 'two' => 'A'}
+    terms = {'A' => a, 'B' => b}
+    t.set_data(data, terms)
+
+    assert_equal b, t.a
+    assert_equal a, t.b
+    assert_equal [[b], [a]], [t.parents, t.children]
+    assert_equal [[t], [ ]], [a.parents, a.children]
+    assert_equal [[ ], [t]], [b.parents, b.children]
+
+    data  = {'one' => 'B', 'two' => 'A'}
+    terms = {'A' => nil, 'B' => nil}
+    t.set_data(data, terms)
+
+    assert_equal nil, t.a
+    assert_equal nil, t.b
+    assert_equal [[], []], [t.parents, t.children]
+    assert_equal [[], []], [a.parents, a.children]
+    assert_equal [[], []], [b.parents, b.children]
   end
 end

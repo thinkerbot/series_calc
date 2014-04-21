@@ -1,22 +1,46 @@
 module SeriesCalc
   class Term
     class << self
-      def subclass(&block)
-        subclass = Class.new(Term)
-        subclass.send(:define_method, :calculate_value, &block)
-        subclass
+      def linkages
+        @linkages ||= {}
       end
 
-      def components
-        @components ||= {}
+      protected
+
+      def parent(name, identifier = name)
+        add_linkage(:parent, name, identifier)
       end
 
-      def uses(component_name, term_class = nil, &block)
-        index = component_terms.length
-        components[component_name] = term_class || subclass(&block)
+      def child(name, identifier = name)
+        add_linkage(:child, name, identifier)
+      end
+
+      private
+
+      def add_linkage(type, name, identifier)
+        if linkages.has_key?(identifier)
+          raise "linkage already defined for: #{identifier.inspect}"
+        end
+
+        linkages[identifier] = ["unset_#{name}", "set_#{name}"].map(&:to_sym)
+
         class_eval %{
-          def #{component_name}
-            children[#{index}] or raise "#{component_name} term has not been attached"
+          attr_reader :#{name}
+
+          protected
+
+          def unset_#{name}
+            if old_term = @#{name}
+              detach_#{type}(old_term)
+            end
+            old_term
+          end
+
+          def set_#{name}(new_term)
+            if new_term
+              attach_#{type}(new_term)
+            end
+            @#{name}= new_term
           end
         }
       end
@@ -27,7 +51,7 @@ module SeriesCalc
     attr_reader :children
     attr_reader :data
 
-    def initialize(identifier = nil, data = nil)
+    def initialize(identifier = nil, data = {})
       @identifier = identifier
       @parents  = []
       @children = []
@@ -94,8 +118,20 @@ module SeriesCalc
       end
     end
 
-    def set_data(data)
-      @data = data
+    def set_data(data, terms = {})
+      linkages = self.class.linkages
+      linkages.each_pair do |key, (unsetter, setter)|
+        next unless data.has_key?(key)
+        send(unsetter)
+      end
+      linkages.each_pair do |key, (unsetter, setter)|
+        next unless data.has_key?(key)
+        identifier = data[key]
+        new_term = terms[identifier]
+        send(setter, new_term)
+      end
+
+      @data.merge! data
       dependents.each(&:recalculate_value)
     end
 
