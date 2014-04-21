@@ -118,21 +118,23 @@ module SeriesCalc
       end
     end
 
-    def set_data(data, terms = {})
+    def set_data(delta, terms = {})
       linkages = self.class.linkages
       linkages.each_pair do |key, (unsetter, setter)|
-        next unless data.has_key?(key)
+        next unless delta.has_key?(key)
         send(unsetter)
       end
       linkages.each_pair do |key, (unsetter, setter)|
-        next unless data.has_key?(key)
-        identifier = data[key]
+        next unless delta.has_key?(key)
+        identifier = delta.delete(key)
         new_term = terms[identifier]
         send(setter, new_term)
       end
 
-      @data.merge! data
-      dependents.each(&:recalculate_value)
+      unless delta.empty?
+        @data.merge! delta
+        dependents.each(&:recalculate_value)
+      end
     end
 
     def recalculate_value

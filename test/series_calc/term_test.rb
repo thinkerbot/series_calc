@@ -373,7 +373,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
     assert_equal(2, c.value)
   end
 
-  class TermWithLinkages < Term
+  class TermWithLinkages < CountFromData
     parent :a, 'one'
     child  :b, 'two'
   end
@@ -417,5 +417,20 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
     assert_equal [[], []], [t.parents, t.children]
     assert_equal [[], []], [a.parents, a.children]
     assert_equal [[], []], [b.parents, b.children]
+  end
+
+  def test_set_data_does_not_recalculate_if_only_a_parent_linkage_changes
+    t, a = TermWithLinkages.new('term'), Term.new('parent')
+    assert_equal 0, t.value
+
+    assert_equal nil, t.a
+    assert_equal false, t.recalculate_value?
+
+    data  = {'one' => 'A'}
+    terms = {'A' => a}
+    t.set_data(data, terms)
+
+    assert_equal a, t.a
+    assert_equal false, t.recalculate_value?
   end
 end
