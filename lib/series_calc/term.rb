@@ -49,14 +49,13 @@ module SeriesCalc
     attr_reader :identifier
     attr_reader :parents
     attr_reader :children
-    attr_reader :data
 
-    def initialize(identifier = nil, data = {})
+    def initialize(identifier = nil)
       @identifier = identifier
       @parents  = []
       @children = []
       @dependents = nil
-      @data = data
+      @data = {}
       @value = nil
     end
 

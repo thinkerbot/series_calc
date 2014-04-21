@@ -341,7 +341,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   class CountFromData < Term
     def calculate_value
-      value = data[:count] || 0
+      value = @data[:count] || 0
       children.each do |child|
         value += child.value
       end
