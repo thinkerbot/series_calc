@@ -4,6 +4,7 @@ require 'series_calc/dimension'
 
 class SeriesCalc::DimensionTest < Test::Unit::TestCase
   Dimension = SeriesCalc::Dimension
+  Slot = SeriesCalc::Slot
 
   attr_reader :now
 
@@ -11,8 +12,16 @@ class SeriesCalc::DimensionTest < Test::Unit::TestCase
     @now = Time.now
   end
 
-  def times_for(*offsets)
-    offsets.map {|offset| now + offset }
+  def slots_for(*offsets)
+    offsets.map {|offset| Slot.new(now + offset) }
+  end
+
+  def assert_data_for_slots(expected, dimension, slots)
+    slot_data = []
+    dimension.each_data_for(slots) do |slot, data|
+      slot_data[slots.index(slot)] = data
+    end
+    assert_equal expected, slot_data
   end
 
   #
@@ -25,61 +34,53 @@ class SeriesCalc::DimensionTest < Test::Unit::TestCase
   end
 
   #
-  # data_for_times
+  # each_data_for
   #
 
-  def test_data_for_times_returns_data_for_interval_containing__time_or_nil
-    times = times_for(-1, 0, 1, 2, 3)
+  def test_each_data_for_returns_data_for_interval_containing_slot_time_or_nil
+    slots = slots_for(-1, 0, 1, 2, 3)
     dimension = Dimension.new([
       [now    , :x],
       [now + 2, :y],
     ])
 
-    assert_equal [nil, :x, :x, :y, :y], dimension.data_for_times(times)
+    assert_data_for_slots [nil, :x, :x, :y, :y], dimension, slots
   end
 
-  #
-  # interval_data=
-  #
-
-  def test_set_interval_data_can_recieve_interval_data_out_of_order
-    dimension = Dimension.new
-    dimension.interval_data = [
-      [now + 2, :y],
+  def test_each_data_for_allows_slots_to_be_out_of_order
+    slots = slots_for(-1, 0, 1, 2, 3)
+    dimension = Dimension.new([
       [now    , :x],
-    ]
+      [now + 2, :y],
+    ])
 
-    assert_equal [:x], dimension.data_for_times([now])
+    assert_data_for_slots [:y, :y, :x, :x, nil], dimension, slots.reverse
   end
 
   #
-  # add_interval_data
+  # set_data
   #
 
-  def test_add_interval_data_appends_time_data_to_interval_data
-    times = times_for(-1, 0, 1, 2, 3)
+  def test_set_data_inserts_data_into_existing
+    slots = slots_for(-1, 0, 1, 2, 3)
     dimension = Dimension.new([
       [now, :x],
     ])
+    assert_data_for_slots [nil, :x, :x, :x, :x], dimension, slots
 
-    assert_equal [nil, :x, :x, :x, :x], dimension.data_for_times(times)
-
-    dimension.add_interval_data(now + 2, :y)
-
-    assert_equal [nil, :x, :x, :y, :y], dimension.data_for_times(times)
+    dimension.set_data(now + 2, :y)
+    assert_data_for_slots [nil, :x, :x, :y, :y], dimension, slots
   end
 
-  def test_add_interval_data_can_receive_data_out_of_order
-    times = times_for(-1, 0, 1, 2, 3)
+  def test_set_data_can_receive_data_out_of_order
+    slots = slots_for(-1, 0, 1, 2, 3)
     dimension = Dimension.new([
       [now + 2, :y],
     ])
+    assert_data_for_slots [nil, nil, nil, :y, :y], dimension, slots
 
-    assert_equal [nil, nil, nil, :y, :y], dimension.data_for_times(times)
-
-    dimension.add_interval_data(now, :x)
-
-    assert_equal [nil, :x, :x, :y, :y], dimension.data_for_times(times)
+    dimension.set_data(now, :x)
+    assert_data_for_slots [nil, :x, :x, :y, :y], dimension, slots
   end
 
   #

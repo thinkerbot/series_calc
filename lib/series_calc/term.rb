@@ -136,6 +136,14 @@ module SeriesCalc
       end
     end
 
+    def unset_data
+      self.class.linkages.each_pair do |key, (unsetter, setter)|
+        send(unsetter)
+      end
+      @data.clear
+      dependents.each(&:recalculate_value)
+    end
+
     def recalculate_value
       @value = nil
     end
