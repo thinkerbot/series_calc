@@ -42,8 +42,8 @@ module SeriesCalc
 
       @slots = []
       @timeseries = timeseries
-      @timeseries.each do |time|
-        @slots << Slot.new(time)
+      @timeseries.each_with_index do |time, index|
+        @slots << Slot.new(time, index)
       end
 
       @slots_enum = @slots.cycle

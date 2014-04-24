@@ -1,21 +1,22 @@
-require 'series_calc/term'
+require 'series_calc/slot_term'
 
 module SeriesCalc
   class Slot
-    TIME_DIMENSION = 'time'.freeze
+    SLOT_DIMENSION_ID = 'slot'.freeze
 
     attr_reader :terms
+    attr_reader :identifier
 
-    def initialize(time = Time.now)
-      @terms = {TIME_DIMENSION => time}
+    def initialize(time = Time.now, identifier = nil)
+      @terms = {SLOT_DIMENSION_ID => SlotTerm.new("time@#{identifier}", time)}
     end
 
     def time
-      terms[TIME_DIMENSION]
+      terms[SLOT_DIMENSION_ID].value
     end
 
     def time=(time)
-      terms[TIME_DIMENSION] = time
+      terms[SLOT_DIMENSION_ID].set_data(time, nil)
     end
 
     def [](term_identifier)
