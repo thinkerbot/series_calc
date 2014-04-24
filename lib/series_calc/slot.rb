@@ -5,10 +5,10 @@ module SeriesCalc
     SLOT_DIMENSION_ID = 'slot'.freeze
 
     attr_reader :terms
-    attr_reader :identifier
+    attr_reader :id
 
-    def initialize(time = Time.now, identifier = nil)
-      @terms = {SLOT_DIMENSION_ID => SlotTerm.new("time@#{identifier}", time)}
+    def initialize(time = Time.now, id = nil)
+      @terms = {SLOT_DIMENSION_ID => SlotTerm.new("time@#{id}", time)}
     end
 
     def time
@@ -19,18 +19,15 @@ module SeriesCalc
       terms[SLOT_DIMENSION_ID].set_data(time, nil)
     end
 
-    def [](term_identifier)
-      terms[term_identifier] or raise("unknown term: #{term_identifier}")
+    def [](dimension_id)
+      terms[dimension_id] or raise("no term for dimension: #{dimension_id}")
     end
 
-    def []=(term_identifier, term)
-      if term && terms.has_key?(term_identifier)
-        raise "term already exists: #{term_identifier}"
-      end
-      terms[term_identifier] = term
+    def []=(dimension_id, term)
+      terms[dimension_id] = term
     end
 
-    def term_identifiers
+    def dimension_ids
       terms.keys
     end
   end

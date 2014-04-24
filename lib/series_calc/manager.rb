@@ -77,7 +77,7 @@ module SeriesCalc
       end
 
       unless updated_slots.empty?
-        dimensions.each_pair do |dimension_identifier, dimension|
+        dimensions.each_pair do |dimension_id, dimension|
           set_data_on(updated_slots, dimension)
         end
       end
@@ -85,45 +85,45 @@ module SeriesCalc
       self
     end
 
-    def set_data(time, dimension_identifier, data)
-      dimension = dimension_for(dimension_identifier)
+    def set_data(time, dimension_id, data)
+      dimension = dimension_for(dimension_id)
       dimension.set_data(time, data)
       set_data_on(slots, dimension)
     end
 
     def set_data_on(slots, dimension)
       dimension.each_data_for(slots) do |slot, data|
-        term = slot[dimension.identifier]
+        term = slot[dimension.id]
         data.nil? ? term.unset_data : term.set_data(data, slot)
       end
     end
 
-    def dimension_type_for(dimension_identifier)
-      dimension_identifier.split('/', 2).first
+    def dimension_type_for(dimension_id)
+      dimension_id.split('/', 2).first
     end
 
-    def term_class_for(dimension_identifier)
-      dimension_type = dimension_type_for(dimension_identifier)
+    def term_class_for(dimension_id)
+      dimension_type = dimension_type_for(dimension_id)
       dimension_types[dimension_type] or raise("unknown dimension: #{dimension_type.inspect}")
     end
 
-    def dimension_for(dimension_identifier)
-      dimensions[dimension_identifier] ||= begin
-        create_terms(dimension_identifier)
-        Dimension.new([], dimension_identifier)
+    def dimension_for(dimension_id)
+      dimensions[dimension_id] ||= begin
+        create_terms(dimension_id)
+        Dimension.new([], dimension_id)
       end
     end
 
-    def create_terms(dimension_identifier)
-      term_class = term_class_for(dimension_identifier)
+    def create_terms(dimension_id)
+      term_class = term_class_for(dimension_id)
       slots.each_with_index do |slot, slot_index|
-        slot[dimension_identifier] = term_class.new("#{dimension_identifier}@#{slot_index}")
+        slot[dimension_id] = term_class.new("#{dimension_id}@#{slot_index}")
       end
     end
 
-    def delete_terms(dimension_identifier)
+    def delete_terms(dimension_id)
       slots.each do |slot|
-        slot[dimension_identifier] = nil
+        slot[dimension_id] = nil
       end
     end
   end

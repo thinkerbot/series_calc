@@ -2,8 +2,8 @@ require 'series_calc/term'
 
 module SeriesCalc
   class SlotTerm < Term
-    def initialize(identifier = nil, time = nil)
-      super(identifier)
+    def initialize(id = nil, time = nil)
+      super(id)
       @value = time
     end
 

@@ -3,11 +3,11 @@ require 'series_calc/slot'
 module SeriesCalc
   class Dimension
     attr_reader :interval_data
-    attr_reader :identifier
+    attr_reader :id
 
-    def initialize(interval_data = [], identifier = nil)
+    def initialize(interval_data = [], id = nil)
       @interval_data = interval_data.sort_by(&:first)
-      @identifier = identifier
+      @id = id
     end
 
     def set_data(new_time, new_data)

@@ -28,7 +28,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_parent_marks_new_parent_branch_to_recalculate_value
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     c.attach_parent(b)
@@ -43,7 +43,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_parent_marks_self_and_children_to_recalculate_dependents
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     c.attach_parent(b)
@@ -64,7 +64,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_parent_raises_error_if_cycle_is_detected
-    a, b, c = %w{a b c}.map {|identifier| Term.new(identifier) }
+    a, b, c = %w{a b c}.map {|id| Term.new(id) }
 
     c.attach_parent(b)
     b.attach_parent(a)
@@ -94,7 +94,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_detach_parent_marks_parent_branch_to_recalculate_value
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     c.attach_parent(b)
@@ -110,7 +110,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_detach_parent_marks_self_and_children_to_recalculate_dependents
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     c.attach_parent(b)
@@ -138,7 +138,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_child_marks_self_and_parents_to_recalculate_value
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     a.attach_child(b)
@@ -153,7 +153,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_child_marks_new_child_branch_to_recalculate_dependents
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     a.attach_child(b)
@@ -174,7 +174,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_attach_child_raises_error_if_cycle_is_detected
-    a, b, c = %w{a b c}.map {|identifier| Term.new(identifier) }
+    a, b, c = %w{a b c}.map {|id| Term.new(id) }
 
     a.attach_child(b)
     b.attach_child(c)
@@ -204,7 +204,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_detach_child_marks_self_and_parents_to_recalculate_value
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     a.attach_child(b)
@@ -220,7 +220,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_detach_child_marks_child_branch_to_recalculate_dependents
-    terms = %w{a b c x y}.map {|identifier| Count.new(identifier) }
+    terms = %w{a b c x y}.map {|id| Count.new(id) }
     a, b, c, x, y = terms
 
     a.attach_child(b)
@@ -241,7 +241,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   def test_dependents_returns_unique_array_of_self_and_ancestors
     terms = %w{a0 a1 a2 a3 b0 b1 c0 d0}
-    a0, a1, a2, a3, b0, b1, c0, d0 = terms.map {|identifier| Term.new(identifier) }
+    a0, a1, a2, a3, b0, b1, c0, d0 = terms.map {|id| Term.new(id) }
 
     a0.attach_child(b0)
     a1.attach_child(b0)
@@ -253,32 +253,32 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
     c0.attach_child(d0)
 
-    assert_equal ['a0', 'a1', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['a0', 'a1', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:id).sort
   end
 
   def test_dependents_automatically_updates_with_attached_children
     terms = %w{a0 a1 a2 a3 b0 b1 c0}
-    a0, a1, a2, a3, b0, b1, c0 = terms.map {|identifier| Term.new(identifier) }
+    a0, a1, a2, a3, b0, b1, c0 = terms.map {|id| Term.new(id) }
 
-    assert_equal ['c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['c0'], c0.dependents.map(&:id).sort
 
     b0.attach_child(c0)
     b1.attach_child(c0)
-    assert_equal ['b0', 'b1', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['b0', 'b1', 'c0'], c0.dependents.map(&:id).sort
 
     a0.attach_child(b0)
     a1.attach_child(b0)
-    assert_equal ['a0', 'a1', 'b0', 'b1', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['a0', 'a1', 'b0', 'b1', 'c0'], c0.dependents.map(&:id).sort
 
     a2.attach_child(b1)
     a3.attach_child(b1)
-    assert_equal ['a0', 'a1', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['a0', 'a1', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:id).sort
 
     a1.detach_child(b0)
-    assert_equal ['a0', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['a0', 'a2', 'a3', 'b0', 'b1', 'c0'], c0.dependents.map(&:id).sort
 
     b1.detach_child(c0)
-    assert_equal ['a0', 'b0', 'c0'], c0.dependents.map(&:identifier).sort
+    assert_equal ['a0', 'b0', 'c0'], c0.dependents.map(&:id).sort
   end
 
   #
@@ -287,7 +287,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   def test_value_automatically_recalculates_with_attached_parents
     terms = %w{a0 b0 b1 c0 c1 c2 c3}
-    a0, b0, b1, c0, c1, c2, c3 = terms.map {|identifier| Count.new(identifier) }
+    a0, b0, b1, c0, c1, c2, c3 = terms.map {|id| Count.new(id) }
 
     assert_equal 1, a0.value
 
@@ -312,7 +312,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   def test_value_automatically_recalculates_with_attached_children
     terms = %w{a0 b0 b1 c0 c1 c2 c3}
-    a0, b0, b1, c0, c1, c2, c3 = terms.map {|identifier| Count.new(identifier) }
+    a0, b0, b1, c0, c1, c2, c3 = terms.map {|id| Count.new(id) }
 
     assert_equal 1, a0.value
 
@@ -350,7 +350,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
   end
 
   def test_set_data_recalculates_value_for_all_dependents
-    a, b, c = %w{a b c}.map {|identifier| CountFromData.new(identifier) }
+    a, b, c = %w{a b c}.map {|id| CountFromData.new(id) }
 
     a.attach_child(b)
     b.attach_child(c)
@@ -380,7 +380,7 @@ class SeriesCalc::TermTest < Test::Unit::TestCase
 
   def test_set_data_manages_linkages_via_terms
     t = TermWithLinkages.new('t')
-    a, b = %w{a b}.map {|identifier| Term.new(identifier) }
+    a, b = %w{a b}.map {|id| Term.new(id) }
 
     assert_equal nil, t.a
     assert_equal nil, t.b

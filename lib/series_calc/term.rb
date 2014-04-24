@@ -7,22 +7,22 @@ module SeriesCalc
 
       protected
 
-      def parent(name, identifier = name)
-        add_linkage(:parent, name, identifier)
+      def parent(name, dimension = name)
+        add_linkage(:parent, name, dimension)
       end
 
-      def child(name, identifier = name)
-        add_linkage(:child, name, identifier)
+      def child(name, dimension = name)
+        add_linkage(:child, name, dimension)
       end
 
       private
 
-      def add_linkage(type, name, identifier)
-        if linkages.has_key?(identifier)
-          raise "linkage already defined for: #{identifier.inspect}"
+      def add_linkage(type, name, dimension)
+        if linkages.has_key?(dimension)
+          raise "linkage already defined for dimension: #{dimension.inspect}"
         end
 
-        linkages[identifier] = ["unset_#{name}", "set_#{name}"].map(&:to_sym)
+        linkages[dimension] = ["unset_#{name}", "set_#{name}"].map(&:to_sym)
 
         class_eval %{
           attr_reader :#{name}
@@ -46,12 +46,12 @@ module SeriesCalc
       end
     end
 
-    attr_reader :identifier
+    attr_reader :id
     attr_reader :parents
     attr_reader :children
 
-    def initialize(identifier = nil)
-      @identifier = identifier
+    def initialize(id = nil)
+      @id = id
       @parents  = []
       @children = []
       @dependents = nil
@@ -65,7 +65,7 @@ module SeriesCalc
 
       new_parent.walk_each_at_and_above([self]) do |parent, path|
         if parent == self
-          raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
+          raise "cycle detected: #{path.map(&:id).map(&:inspect).join(' -> ')}"
         else
           parent.recalculate_value
         end
@@ -87,7 +87,7 @@ module SeriesCalc
 
       new_child.walk_each_at_and_below([self]) do |child, path|
         if child == self
-          raise "cycle detected: #{path.map(&:identifier).map(&:inspect).join(' -> ')}"
+          raise "cycle detected: #{path.map(&:id).map(&:inspect).join(' -> ')}"
         else
           child.recalculate_dependents
         end
@@ -119,14 +119,14 @@ module SeriesCalc
 
     def set_data(delta, terms = {})
       linkages = self.class.linkages
-      linkages.each_pair do |key, (unsetter, setter)|
-        next unless delta.has_key?(key)
+      linkages.each_pair do |dimension, (unsetter, setter)|
+        next unless delta.has_key?(dimension)
         send(unsetter)
       end
-      linkages.each_pair do |key, (unsetter, setter)|
-        next unless delta.has_key?(key)
-        identifier = delta.delete(key)
-        new_term = terms[identifier]
+      linkages.each_pair do |dimension, (unsetter, setter)|
+        next unless delta.has_key?(dimension)
+        dimension_id = delta.delete(dimension)
+        new_term = terms[dimension_id]
         send(setter, new_term)
       end
 
@@ -137,7 +137,7 @@ module SeriesCalc
     end
 
     def unset_data
-      self.class.linkages.each_pair do |key, (unsetter, setter)|
+      self.class.linkages.each_pair do |dimension, (unsetter, setter)|
         send(unsetter)
       end
       @data.clear

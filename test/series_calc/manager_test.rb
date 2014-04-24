@@ -110,7 +110,7 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   # term_class_for
   #
 
-  def test_dimension_for_returns_term_class_for_identifier
+  def test_dimension_for_returns_term_class_for_id
     manager = Manager.create(:dimension_types => {
       'a' => SumTerm,
       'b' => NegativeSumTerm,
@@ -134,7 +134,7 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
       ['a/one@2', SumTerm],
       ['a/one@3', SumTerm],
       ['a/one@4', SumTerm],
-    ], terms.map {|term| [term.identifier, term.class] }
+    ], terms.map {|term| [term.id, term.class] }
     
   end
 
