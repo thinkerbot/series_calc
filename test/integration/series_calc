@@ -1,0 +1,12 @@
+#!/bin/bash
+. test/integration/helper
+
+#
+# -h
+#
+
+test_series_calc_h_prints_help () {
+series_calc -h | grep -q "usage: series_calc"
+}
+
+. ts

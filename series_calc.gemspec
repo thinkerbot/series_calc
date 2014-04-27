@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.license       = 'MIT'
 
   spec.files         = []
-  spec.executables   = []
+  spec.executables   = ["series_calc"]
   spec.require_paths = ["lib"]
 
   spec.add_dependency "timeseries", "~> 1.0"
