@@ -3,6 +3,10 @@ begin
   require 'optparse'
   require 'series_calc'
 
+  options = SeriesCalc.options(
+    'mode' => 'run',
+    'log_level_offset' => 0
+  )
   OptionParser.new do |opts|
     opts.banner = %{
 usage: series_calc [options] FILES...
@@ -12,6 +16,18 @@ usage: series_calc [options] FILES...
 options:
 }.lstrip
 
+    opts.on("-c", "--config-dir CONFIG_DIR", "config dir (#{options['config_dir']})") do |value|
+      options['config_dir'] = value
+    end
+
+    opts.on("--dry-run", "print configs and exit") do
+      options['mode'] = 'dry_run'
+    end
+
+    opts.on("-e", "--environment ENVIRONMENT", "runtime environment (#{options['environment']})") do |value|
+      options['environment'] = value
+    end
+
     opts.on("-h", "--help", "print this help") do
       puts opts
       puts
@@ -19,11 +35,27 @@ options:
       exit
     end
 
+    opts.on("-q", "--quiet", "decrease logging") do
+      options['log_level_offset'] += 1
+    end
+
+    opts.on("-v", "--verbose", "increase logging") do
+      options['log_level_offset'] -= 1
+    end
+
     opts.on("--version", "print version information") do |node|
       puts SeriesCalc.version
       exit
     end
   end.parse!
+
+  mode   = options['mode']
+  config = SeriesCalc.setup(options)
+
+  if mode == 'dry_run'
+    puts config.to_yaml
+    exit
+  end
 
 rescue Interrupt
   exit 130
