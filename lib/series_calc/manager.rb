@@ -1,5 +1,7 @@
 require 'series_calc/dimension'
 require 'timeseries'
+require 'stringio'
+
 Time.zone = 'UTC'
 
 module SeriesCalc
@@ -89,6 +91,39 @@ module SeriesCalc
       dimension = dimension_for(dimension_id)
       dimension.set_data(time, data)
       set_data_on(slots, dimension)
+
+      self
+    end
+
+    def terms_for(dimension_ids)
+      unless block_given?
+        return enum_for(:terms_for, dimension_ids)
+      end
+
+      slots.sort_by(&:time).each do |slot|
+        terms = dimension_ids.map {|dimension_id| slot[dimension_id] }
+        yield slot.time, terms
+      end
+    end
+
+    def values_for(dimension_ids)
+      unless block_given?
+        return enum_for(:values_for, dimension_ids)
+      end
+
+      terms_for(dimension_ids).each do |time, terms|
+        yield time, terms.map(&:value)
+      end
+    end
+
+    def data_for(dimension_ids)
+      unless block_given?
+        return enum_for(:values_for, dimension_ids)
+      end
+
+      terms_for(dimension_ids).each do |time, terms|
+        yield time, terms.map(&:data)
+      end
     end
 
     def set_data_on(slots, dimension)

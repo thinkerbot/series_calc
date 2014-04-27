@@ -50,12 +50,14 @@ options:
   end.parse!
 
   mode   = options['mode']
-  config = SeriesCalc.setup(options)
+  engine = SeriesCalc.setup(options)
 
   if mode == 'dry_run'
-    puts config.to_yaml
+    puts engine.config.to_yaml
     exit
   end
+
+  engine.process(ARGF, $stdout)
 
 rescue Interrupt
   exit 130

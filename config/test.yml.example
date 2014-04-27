@@ -1,3 +1,22 @@
+# Timeseries
+start_time: 2010-01-01T00:00:00Z
+period: 15m
+n_steps: 5
+
+# Manager
+requires:
+- series_calc/examples/sum_term
+- series_calc/examples/node_handler
+- series_calc/examples/state_handler
+- series_calc/examples/request_handler
+default_dimension_type: SeriesCalc::Examples::SumTerm
+
+handlers:
+  NODE: SeriesCalc::Examples::NodeHandler
+  STATE: SeriesCalc::Examples::StateHandler
+  REQUEST: SeriesCalc::Examples::RequestHandler
+
+# Logging
 log_level: debug
 log_format: '[%d] %-5l %c %m\n'
 log_datetime_format: "%H:%M:%S.%3N"
