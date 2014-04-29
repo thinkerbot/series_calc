@@ -1,6 +1,5 @@
 require 'series_calc/dimension'
 require 'timeseries'
-require 'stringio'
 
 Time.zone = 'UTC'
 

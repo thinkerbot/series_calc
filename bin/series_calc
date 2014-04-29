@@ -2,10 +2,10 @@
 begin
   require 'optparse'
   require 'series_calc'
+  require 'series_calc/command'
 
-  options = SeriesCalc.options(
-    'mode' => 'run',
-    'log_level_offset' => 0
+  options = SeriesCalc::Command.options(
+    :mode => 'run'
   )
   OptionParser.new do |opts|
     opts.banner = %{
@@ -17,15 +17,15 @@ options:
 }.lstrip
 
     opts.on("-c", "--config-dir CONFIG_DIR", "config dir (#{options['config_dir']})") do |value|
-      options['config_dir'] = value
+      options[:config_dir] = value
     end
 
     opts.on("--dry-run", "print configs and exit") do
-      options['mode'] = 'dry_run'
+      options[:mode] = 'dry_run'
     end
 
     opts.on("-e", "--environment ENVIRONMENT", "runtime environment (#{options['environment']})") do |value|
-      options['environment'] = value
+      options[:environment] = value
     end
 
     opts.on("-h", "--help", "print this help") do
@@ -36,11 +36,11 @@ options:
     end
 
     opts.on("-q", "--quiet", "decrease logging") do
-      options['log_level_offset'] += 1
+      options[:log_offset] += 1
     end
 
     opts.on("-v", "--verbose", "increase logging") do
-      options['log_level_offset'] -= 1
+      options[:log_offset] -= 1
     end
 
     opts.on("--version", "print version information") do |node|
@@ -49,15 +49,18 @@ options:
     end
   end.parse!
 
-  mode   = options['mode']
-  engine = SeriesCalc.setup(options)
+  mode   = options[:mode]
+  config = SeriesCalc::Command.load_config(options)
 
   if mode == 'dry_run'
-    puts engine.config.to_yaml
+    # hackery to get the level correct in the yml
+    SeriesCalc::Command.setup_logger(config)
+    puts config.to_yaml
     exit
+  else
+    engine = SeriesCalc::Command.setup(config)
+    engine.process(ARGF, $stdout)
   end
-
-  engine.process(ARGF, $stdout)
 
 rescue Interrupt
   exit 130

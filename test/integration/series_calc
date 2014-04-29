@@ -55,8 +55,8 @@ series_calc "$input" | assert_output "\
 
 test_series_calc_c_sets_config_dir () {
 mkdir -p "$ts_test_dir"
-printf "%s\n" "log_level: debug" > "$ts_test_dir/test.yml"
-series_calc -c "$ts_test_dir" --dry-run | grep -q "log_level: debug"
+printf "%s\n" "log: {level: debug}" > "$ts_test_dir/test.yml"
+series_calc -c "$ts_test_dir" --dry-run | grep -q "  level: debug"
 }
 
 #
@@ -64,7 +64,7 @@ series_calc -c "$ts_test_dir" --dry-run | grep -q "log_level: debug"
 #
 
 test_series_calc_dry_run_prints_configs_and_exits () {
-series_calc --dry-run | grep -q "log_level: debug"
+series_calc --dry-run | grep -q "  level: debug"
 }
 
 #
@@ -72,7 +72,7 @@ series_calc --dry-run | grep -q "log_level: debug"
 #
 
 test_series_calc_e_sets_runtime_environment () {
-series_calc -e development --dry-run | grep -q "log_level: warn"
+series_calc -e development --dry-run | grep -q "  level: warn"
 }
 
 #
@@ -87,16 +87,16 @@ series_calc -h | grep -q "usage: series_calc"
 # -q, --quiet
 #
 
-test_series_calc_q_increments_log_level () {
-series_calc -qqq --dry-run | grep -q "log_level: error"
+test_series_calc_q_increments_level () {
+series_calc -qqq --dry-run | grep -q "  level: error"
 }
 
 #
 # -v, --verbose
 #
 
-test_series_calc_v_decrements_log_level () {
-series_calc -vvv --dry-run | grep -q "log_level: debug"
+test_series_calc_v_decrements_level () {
+series_calc -vvv --dry-run | grep -q "  level: debug"
 }
 
 . ts
