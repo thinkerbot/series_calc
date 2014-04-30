@@ -10,8 +10,7 @@ module SeriesCalc
 
     DEFAULT_CONFIG = {
       'log' => {
-        'level'           => ENV['SERIES_CALC_LOG_LEVEL'] || 'warn',
-        'offset'          => 0,
+        'level'           => ENV['SERIES_CALC_LOG_LEVEL']  || 'warn',
         'format'          => ENV['SERIES_CALC_LOG_FORMAT'] || '[%d] %-5l %p %c %m\n',
         'datetime_format' => ENV['SERIES_CALC_LOG_DATETIME_FORMAT'] || '%Y-%m-%dT%H:%M:%S.%3NZ',
       },
@@ -29,7 +28,7 @@ module SeriesCalc
 
     DEFAULT_OPTIONS = {
       :environment => ENV['SERIES_CALC_ENVIRONMENT'] || 'development',
-      :config_dir  => ENV['SERIES_CALC_CONFIG_DIR'] || 'config',
+      :config_dir  => ENV['SERIES_CALC_CONFIG_DIR']  || 'config',
       :log_offset  => 0,
     }
 
@@ -39,6 +38,7 @@ module SeriesCalc
       options = DEFAULT_OPTIONS.merge(options)
       config_dir  = options[:config_dir]
       environment = options[:environment]
+      log_offset  = options[:log_offset]
 
       config_file   = File.expand_path("#{environment}.yml", config_dir)
       global_config = YAML.load_file(config_file) || {}
@@ -61,6 +61,15 @@ module SeriesCalc
         config[object] = object_config
       end
 
+      log_level = config['log']['level']
+      level = LOG_LEVELS.index(log_level) or raise("invalid log level: #{level.inspect}")
+      level += log_offset
+
+      min_level, max_level = 0, LOG_LEVELS.length - 1
+      level = min_level if level < min_level
+      level = max_level if level > max_level
+      config['log']['level'] = LOG_LEVELS[level]
+
       config
     end
 
@@ -69,26 +78,16 @@ module SeriesCalc
 
       log_config = config['log']
       log_level = log_config['level']
-      log_level_offset = log_config['offset']
-      level  = LOG_LEVELS.index(log_level) or raise("invalid log level: #{level.inspect}")
-      level += log_level_offset
-
       format = log_config['format']
       datetime_format = log_config['datetime_format']
-
-      min_level, max_level = 0, LOG_LEVELS.length - 1
-      level = min_level if level < min_level
-      level = max_level if level > max_level
 
       layout = Logging.layouts.pattern(:pattern => format, :date_pattern => datetime_format)
       Logging.appenders.stderr(:layout => layout)
 
       logger = Logging.logger.root
-      logger.level = level
+      logger.level = LOG_LEVELS.index(log_level)
       logger.add_appenders "stderr"
 
-      log_config['level'] = LOG_LEVELS[logger.level]
-      log_config['offset'] = 0
       logger
     end
 

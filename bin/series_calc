@@ -53,8 +53,6 @@ options:
   config = SeriesCalc::Command.load_config(options)
 
   if mode == 'dry_run'
-    # hackery to get the level correct in the yml
-    SeriesCalc::Command.setup_logger(config)
     puts config.to_yaml
     exit
   else
