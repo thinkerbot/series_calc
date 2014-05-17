@@ -118,7 +118,7 @@ module SeriesCalc
     end
 
     def set_data(delta, terms = {})
-      delta = delta.dup
+      num_updates = delta.length
 
       linkages = self.class.linkages
       linkages.each_pair do |dimension, (unsetter, setter)|
@@ -127,12 +127,13 @@ module SeriesCalc
       end
       linkages.each_pair do |dimension, (unsetter, setter)|
         next unless delta.has_key?(dimension)
-        dimension_id = delta.delete(dimension)
+        dimension_id = delta[dimension]
         new_term = dimension_id.nil? ? nil : terms[dimension_id]
         send(setter, new_term)
+        num_updates -= 1
       end
 
-      unless delta.empty?
+      if num_updates > 0
         @data.merge! delta
         dependents.each(&:recalculate_value)
       end
