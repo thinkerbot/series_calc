@@ -38,6 +38,7 @@ module SeriesCalc
 
       def node(time, id, data)
         manager.set_data(time, id, {:parent => data})
+        manager.update_slot_data
       end
 
       def state(time, id, data)
@@ -45,6 +46,8 @@ module SeriesCalc
       end
 
       def request(time, id, data)
+        manager.update_slot_data
+
         dimension_ids = data.split(' ')
         yield time, id, dimension_ids.join(' ')
         manager.values_for(dimension_ids) do |slot_time, values|

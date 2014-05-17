@@ -35,6 +35,7 @@ module SeriesCalc
     attr_reader :slots
     attr_reader :dimension_types
     attr_reader :dimensions
+    attr_reader :updated_dimensions
 
     def initialize(timeseries, dimension_types = {})
       if timeseries.n_steps.nil?
@@ -53,6 +54,7 @@ module SeriesCalc
 
       @dimension_types = dimension_types
       @dimensions = {}
+      @updated_dimensions = []
     end
 
     def slot_times
@@ -89,9 +91,16 @@ module SeriesCalc
     def set_data(time, dimension_id, data)
       dimension = dimension_for(dimension_id)
       dimension.set_data(time, data)
-      set_data_on(slots, dimension)
+      updated_dimensions << dimension
 
       self
+    end
+
+    def update_slot_data
+      updated_dimensions.uniq.each do |dimension|
+        set_data_on(slots, dimension)
+      end
+      updated_dimensions.clear
     end
 
     def terms_for(dimension_ids)
