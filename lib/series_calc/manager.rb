@@ -88,6 +88,13 @@ module SeriesCalc
       self
     end
 
+    def clear_unreachable_data
+      min_slot_time = slot_times.first
+      dimensions.each_value do |dimension|
+        dimension.clear_data_before(min_slot_time)
+      end
+    end
+
     def set_data(time, dimension_id, data)
       dimension = dimension_for(dimension_id)
       dimension.set_data(time, data)

@@ -29,10 +29,14 @@ module SeriesCalc
           state(time, id, data)
         when REQUEST
           start_time = Time.now
+          if @stop_time
+            logger.info { "STATES #{start_time - @stop_time}s" }
+          end
           request(time, id, data) do |otime, oid, odata|
             yield Line.new(otime, REPLY, oid, odata)
           end
-          logger.info { "#{type} #{id} #{Time.now - start_time}s" }
+          @stop_time = Time.now
+          logger.info { "#{type} #{id} #{@stop_time- start_time}s" }
         end
       end
 
@@ -46,6 +50,8 @@ module SeriesCalc
       end
 
       def request(time, id, data)
+        manager.advance_to(time - 24.hours)
+        manager.clear_unreachable_data
         manager.update_slot_data
 
         dimension_ids = data.split(' ')
