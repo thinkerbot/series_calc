@@ -6,17 +6,6 @@ module SeriesCalc
     class Controller
       class << self
         def setup(config = {})
-          default_dimension_type = config.fetch('default_dimension_type', nil)
-          if default_dimension_type
-            default_dimension_type = default_dimension_type.constantize
-          end
-
-          raw_dimension_types = config.fetch('dimension_types', {})
-          dimension_types = Hash.new(default_dimension_type)
-          raw_dimension_types.each do |dimension_type, klass_name|
-            dimension_types[dimension_type] = klass_name.constantize
-          end
-
           start_time = config.fetch('start_time', nil)
           period     = config.fetch('period', nil)
           n_steps    = config.fetch('n_steps', nil)
@@ -30,14 +19,16 @@ module SeriesCalc
 
           new(manager)
         end
+
+        def dimension_types
+          {}
+        end
       end
 
       DEFAULT_CONFIG = {
         'start_time'              => nil,
         'period'                  => nil,
         'n_steps'                 => nil,
-        'dimension_types'         => {},
-        'default_dimension_type'  => nil,
       }
 
       attr_reader :manager

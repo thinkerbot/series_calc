@@ -3,7 +3,6 @@ controller:
   start_time: 2010-01-01T00:00:00Z
   period: 15m
   n_steps: 5
-  default_dimension_type: SeriesCalc::Examples::SumTerm
 
 log:
   level: debug

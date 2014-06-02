@@ -4,6 +4,12 @@ require 'series_calc/examples/sum_term'
 module SeriesCalc
   module Examples
     class SumGraphController < Command::Controller
+      class << self
+        def dimension_types
+          Hash.new(SumTerm)
+        end
+      end
+
       Line = SeriesCalc::Command::Line
 
       NODE    = 'NODE'.freeze
