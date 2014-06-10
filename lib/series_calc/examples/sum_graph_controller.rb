@@ -56,11 +56,11 @@ module SeriesCalc
       end
 
       def request(time, id, data)
-        manager.advance_to(time - 24.hours)
+        manager.advance_to(time)
         manager.clear_unreachable_data
         manager.update_slot_data
 
-        dimension_ids = data.split(' ')
+        dimension_ids = data.to_s.split(' ')
         yield time, id, dimension_ids.join(' ')
         manager.values_for(dimension_ids) do |slot_time, values|
           yield slot_time, id, values.join(' ')
