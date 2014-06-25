@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 require File.expand_path('../../helper', __FILE__)
-require 'series_calc/manager'
+require 'series_calc/timeframe'
 
-class SeriesCalc::ManagerTest < Test::Unit::TestCase
-  Manager = SeriesCalc::Manager
+class SeriesCalc::TimeframeTest < Test::Unit::TestCase
+  Timeframe = SeriesCalc::Timeframe
   Dimension = SeriesCalc::Dimension
 
   attr_reader :now
@@ -33,42 +33,40 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   end
 
   #
-  # create
+  # new
   #
 
-  def test_create_makes_a_5_step_15min_manager
-    manager = Manager.create(:start_time => '2010-01-01')
+  def test_new_makes_a_5_step_15min_timeframe
+    timeframe = Timeframe.new(:start_time => '2010-01-01')
     assert_equal %w{
       2010-01-01T00:00:00Z
       2010-01-01T00:15:00Z
       2010-01-01T00:30:00Z
       2010-01-01T00:45:00Z
       2010-01-01T01:00:00Z
-    }, manager.slots.map(&:time).map(&:iso8601)
+    }, timeframe.slots.map(&:time).map(&:iso8601)
   end
 
   #
   # initialize
   #
 
-  def test_initialize_creates_slots_from_timeseries
-    timeseries = Timeseries.create(
+  def test_initialize_news_slots_from_timeseries
+    timeframe = Timeframe.new(
       :start_time => '2010-01-01',
       :n_steps => 4,
       :period  => '10s'
     )
-    manager = Manager.new(timeseries)
     assert_equal %w{
       2010-01-01T00:00:00Z
       2010-01-01T00:00:10Z
       2010-01-01T00:00:20Z
       2010-01-01T00:00:30Z
-    }, manager.slots.map(&:time).map(&:iso8601)
+    }, timeframe.slots.map(&:time).map(&:iso8601)
   end
 
   def test_initialize_raises_error_for_unbounded_timeseries
-    timeseries = Timeseries.create(:n_steps => nil)
-    error = assert_raises(RuntimeError) { Manager.new(timeseries) }
+    error = assert_raises(RuntimeError) { Timeframe.new(:n_steps => nil) }
     assert_equal "cannot create slots from unbounded timeseries", error.message
   end
 
@@ -77,14 +75,14 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   #
 
   def test_slot_times_returns_sorted_slot_times
-    manager = Manager.create :start_time => '2010-01-01'
+    timeframe = Timeframe.new :start_time => '2010-01-01'
     assert_equal %w{
       2010-01-01T00:00:00Z
       2010-01-01T00:15:00Z
       2010-01-01T00:30:00Z
       2010-01-01T00:45:00Z
       2010-01-01T01:00:00Z
-    }, manager.slot_times.map(&:iso8601)
+    }, timeframe.slot_times.map(&:iso8601)
   end
 
   #
@@ -92,10 +90,10 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   #
 
   def test_advance_to_rotates_slot_times_through_timeseries_until_latest_slot_time_is_before_target
-    manager = Manager.create :start_time => '2010-01-01'
+    timeframe = Timeframe.new :start_time => '2010-01-01'
 
     target_time = Time.zone.parse('2010-01-01T02:35:00')
-    manager.advance_to(target_time)
+    timeframe.advance_to(target_time)
 
     assert_equal %w{
       2010-01-01T01:30:00Z
@@ -103,7 +101,7 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
       2010-01-01T02:00:00Z
       2010-01-01T02:15:00Z
       2010-01-01T02:30:00Z
-    }, manager.slot_times.map(&:iso8601)
+    }, timeframe.slot_times.map(&:iso8601)
   end
 
   #
@@ -111,12 +109,12 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   #
 
   def test_dimension_for_returns_term_class_for_id
-    manager = Manager.create(:dimension_types => {
+    timeframe = Timeframe.new(:dimension_types => {
       'a' => SumTerm,
       'b' => NegativeSumTerm,
     })
-    assert_equal SumTerm, manager.term_class_for('a/one')
-    assert_equal NegativeSumTerm, manager.term_class_for('b/one')
+    assert_equal SumTerm, timeframe.term_class_for('a/one')
+    assert_equal NegativeSumTerm, timeframe.term_class_for('b/one')
   end
 
   #
@@ -124,10 +122,10 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   #
 
   def test_dimension_for_initializes_terms_in_each_slot_if_needed
-    manager = Manager.create(:dimension_types => {'a' => SumTerm})
-    assert_equal Dimension, manager.dimension_for('a/one').class
+    timeframe = Timeframe.new(:dimension_types => {'a' => SumTerm})
+    assert_equal Dimension, timeframe.dimension_for('a/one').class
 
-    terms = manager.slots.map {|slot| slot['a/one'] }
+    terms = timeframe.slots.map {|slot| slot['a/one'] }
     assert_equal [
       ['a/one@0', SumTerm],
       ['a/one@1', SumTerm],
@@ -139,8 +137,8 @@ class SeriesCalc::ManagerTest < Test::Unit::TestCase
   end
 
   def test_dimension_for_raises_error_for_unregistered_type
-    manager = Manager.create
-    err = assert_raises(RuntimeError) { manager.dimension_for('unknown/one') }
+    timeframe = Timeframe.new
+    err = assert_raises(RuntimeError) { timeframe.dimension_for('unknown/one') }
     assert_equal 'unknown dimension: "unknown"', err.message
   end
 end
