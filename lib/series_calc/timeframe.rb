@@ -4,7 +4,7 @@ require 'timeseries'
 Time.zone = 'UTC'
 
 module SeriesCalc
-  class Manager
+  class Timeframe
     class << self
       def default_start_time
         Time.parse(Time.now.strftime("%Y-%m-%d %H:00:00"))
@@ -18,16 +18,8 @@ module SeriesCalc
         '15m'
       end
 
-      def create(options = {})
-        options = options.dup
-
-        options[:start_time] ||= default_start_time
-        options[:n_steps]    ||= default_n_steps
-        options[:period]     ||= default_period
-        timeseries = Timeseries.create(options)
-        dimension_types = options[:dimension_types] || {}
-
-        new(timeseries, dimension_types)
+      def dimension_types
+        {}
       end
     end
 
@@ -37,7 +29,14 @@ module SeriesCalc
     attr_reader :dimensions
     attr_reader :updated_dimensions
 
-    def initialize(timeseries, dimension_types = {})
+    def initialize(options = {})
+      timeseries = Timeseries.create(
+        :start_time => options.fetch(:start_time) { self.class.default_start_time },
+        :n_steps    => options.fetch(:n_steps)    { self.class.default_n_steps },
+        :period     => options.fetch(:period)     { self.class.default_period },
+      )
+      dimension_types = options.fetch(:dimension_types) { self.class.dimension_types }
+
       if timeseries.n_steps.nil?
         raise "cannot create slots from unbounded timeseries"
       end

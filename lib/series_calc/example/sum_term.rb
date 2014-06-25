@@ -1,8 +1,8 @@
 require 'series_calc/term'
 
 module SeriesCalc
-  module Examples
-    class SumTerm < SeriesCalc::Term
+  module Example
+    class SumTerm < Term
       parent :parent
 
       def calculate_value

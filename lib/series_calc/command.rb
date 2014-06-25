@@ -16,12 +16,12 @@ module SeriesCalc
       },
 
       'controller' => Controller::DEFAULT_CONFIG.merge(
-        'class'   => nil,
+        'class'   => 'SeriesCalc::Example::Controller',
         'require' => nil,
       ),
 
       'serializer' => Serializer::DEFAULT_CONFIG.merge(
-        'class'   => 'SeriesCalc::Command::Serializer',
+        'class'   => 'SeriesCalc::Example::Serializer',
         'require' => nil,
       ),
     }

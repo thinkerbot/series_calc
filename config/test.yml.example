@@ -1,8 +1,11 @@
 controller:
-  class: SeriesCalc::Examples::SumGraphController
+  class: SeriesCalc::Example::Controller
   start_time: 2010-01-01T00:00:00Z
   period: 15m
   n_steps: 5
+
+serializer:
+  class: SeriesCalc::Example::Serializer
 
 log:
   level: debug

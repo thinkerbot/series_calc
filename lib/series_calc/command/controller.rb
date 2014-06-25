@@ -1,23 +1,41 @@
-require 'series_calc/manager'
-require 'series_calc/command/line'
+require 'series_calc/timeframe'
+require 'series_calc/command/message'
 
 module SeriesCalc
   module Command
     class Controller
       class << self
+        def default_start_time
+          Time.parse(Time.now.strftime("%Y-%m-%d %H:00:00"))
+        end
+
+        def default_n_steps
+          5
+        end
+
+        def default_period
+          '15m'
+        end
+
         def setup(config = {})
-          start_time = config.fetch('start_time', nil)
-          period     = config.fetch('period', nil)
-          n_steps    = config.fetch('n_steps', nil)
+          options = {
+            :start_time => config['start_time'],
+            :n_steps    => config['n_steps'],
+            :period     => config['period'],
+          }
+          create(options)
+        end
 
-          manager = Manager.create(
-            :start_time => start_time,
-            :period => period,
-            :n_steps => n_steps,
-            :dimension_types => dimension_types,
-          )
+        def create(options = {})
+          options = options.dup
 
-          new(manager)
+          options[:start_time] ||= default_start_time
+          options[:n_steps]    ||= default_n_steps
+          options[:period]     ||= default_period
+          options[:dimension_types] ||= dimension_types
+          timeframe  = Timeframe.new(options)
+
+          new(timeframe)
         end
 
         def dimension_types
@@ -31,13 +49,15 @@ module SeriesCalc
         'n_steps'                 => nil,
       }
 
-      attr_reader :manager
+      attr_reader :timeframe
+      attr_reader :logger
 
-      def initialize(manager)
-        @manager = manager
+      def initialize(timeframe)
+        @timeframe = timeframe
+        @logger = Logging.logger[self]
       end
 
-      def route(line)
+      def route(message)
         raise NotImplementedError
       end
     end

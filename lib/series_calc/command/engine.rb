@@ -5,8 +5,8 @@ require 'stringio'
 module SeriesCalc
   module Command
     class Engine
-      attr_reader :serializer
       attr_reader :controller
+      attr_reader :serializer
 
       def initialize(controller, serializer)
         @controller = controller
@@ -14,15 +14,17 @@ module SeriesCalc
       end
 
       def process(stdin, stdout)
-        while line = serializer.gets(stdin)
-          next if line == EMPTY_LINE
-
-          outputs = []
-          controller.route(line) do |output|
-            outputs << output
+        while imessage = serializer.get(stdin)
+          if imessage == Message::NULL_MESSAGE
+            next
           end
 
-          serializer.puts(outputs, stdout)
+          omessage = controller.route(imessage)
+          if omessage == Message::NULL_MESSAGE
+            next
+          end
+
+          serializer.put(omessage, stdout)
         end
       end
 
