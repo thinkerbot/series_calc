@@ -19,7 +19,7 @@ module SeriesCalc
       VALUES = 'VALUES'.freeze
 
       def get_data(message)
-        timeframe.update_slot_data
+        set_slot_data
 
         dimension_ids = message.content[:headers]
         enum = timeframe.data_for(dimension_ids)
@@ -27,7 +27,7 @@ module SeriesCalc
       end
 
       def get_values(message)
-        timeframe.update_slot_data
+        set_slot_data
 
         dimension_ids = message.content[:headers]
         enum = timeframe.values_for(dimension_ids)
@@ -35,13 +35,13 @@ module SeriesCalc
       end
 
       def put_graph(message)
-        timeframe.set_data(message.creation_time, message.id, {:parent => message.content[:headers][0]})
-        timeframe.update_slot_data
+        set_dimension_data(message.creation_time, message.id, {:parent => message.content[:headers][0]})
+        set_slot_data
         Message::NULL_MESSAGE
       end
 
       def put_data(message)
-        timeframe.set_data(message.creation_time, message.id, {:value => message.content[:headers][0].to_i})
+        set_dimension_data(message.creation_time, message.id, {:value => message.content[:headers][0].to_i})
         Message::NULL_MESSAGE
       end
 
@@ -63,9 +63,6 @@ module SeriesCalc
           end
         else unroutable(message)
         end
-      end
-
-      def unroutable(message)
       end
     end
   end

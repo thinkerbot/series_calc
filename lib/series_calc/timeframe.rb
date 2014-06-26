@@ -5,38 +5,10 @@ Time.zone = 'UTC'
 
 module SeriesCalc
   class Timeframe
-    class << self
-      def default_start_time
-        Time.parse(Time.now.strftime("%Y-%m-%d %H:00:00"))
-      end
-
-      def default_n_steps
-        5
-      end
-
-      def default_period
-        '15m'
-      end
-
-      def dimension_types
-        {}
-      end
-    end
-
     attr_reader :timeseries
     attr_reader :slots
-    attr_reader :dimension_types
-    attr_reader :dimensions
-    attr_reader :updated_dimensions
 
-    def initialize(options = {})
-      timeseries = Timeseries.create(
-        :start_time => options.fetch(:start_time) { self.class.default_start_time },
-        :n_steps    => options.fetch(:n_steps)    { self.class.default_n_steps },
-        :period     => options.fetch(:period)     { self.class.default_period },
-      )
-      dimension_types = options.fetch(:dimension_types) { self.class.dimension_types }
-
+    def initialize(timeseries)
       if timeseries.n_steps.nil?
         raise "cannot create slots from unbounded timeseries"
       end
@@ -50,14 +22,14 @@ module SeriesCalc
       @slots_enum = @slots.cycle
       @current_timeseries_index = @timeseries.n_steps
       @current_slot_index = 0
-
-      @dimension_types = dimension_types
-      @dimensions = {}
-      @updated_dimensions = []
     end
 
     def slot_times
       slots.map(&:time).sort
+    end
+
+    def min_slot_time
+      slot_times.first
     end
 
     def next_slot
@@ -78,35 +50,19 @@ module SeriesCalc
         @current_timeseries_index += 1
       end
 
-      unless updated_slots.empty?
-        dimensions.each_pair do |dimension_id, dimension|
-          set_data_on(updated_slots, dimension)
-        end
-      end
-
-      self
+      updated_slots
     end
 
-    def clear_unreachable_data
-      min_slot_time = slot_times.first
-      dimensions.each_value do |dimension|
-        dimension.clear_data_before(min_slot_time)
+    def create_terms(dimension_id, term_class)
+      slots.each_with_index do |slot, slot_index|
+        slot[dimension_id] = term_class.new("#{dimension_id}@#{slot_index}")
       end
     end
 
-    def set_data(time, dimension_id, data)
-      dimension = dimension_for(dimension_id)
-      dimension.set_data(time, data)
-      updated_dimensions << dimension
-
-      self
-    end
-
-    def update_slot_data
-      updated_dimensions.uniq.each do |dimension|
-        set_data_on(slots, dimension)
+    def delete_terms(dimension_id)
+      slots.each do |slot|
+        slot[dimension_id] = nil
       end
-      updated_dimensions.clear
     end
 
     def terms_for(dimension_ids)
@@ -137,42 +93,6 @@ module SeriesCalc
 
       terms_for(dimension_ids).each do |time, terms|
         yield time, terms.map(&:data)
-      end
-    end
-
-    def set_data_on(slots, dimension)
-      dimension.each_data_for(slots) do |slot, data|
-        term = slot[dimension.id]
-        data.nil? ? term.unset_data : term.set_data(data, slot)
-      end
-    end
-
-    def dimension_type_for(dimension_id)
-      dimension_id.split('/', 2).first
-    end
-
-    def term_class_for(dimension_id)
-      dimension_type = dimension_type_for(dimension_id)
-      dimension_types[dimension_type] or raise("unknown dimension: #{dimension_type.inspect}")
-    end
-
-    def dimension_for(dimension_id)
-      dimensions[dimension_id] ||= begin
-        create_terms(dimension_id)
-        Dimension.new([], dimension_id)
-      end
-    end
-
-    def create_terms(dimension_id)
-      term_class = term_class_for(dimension_id)
-      slots.each_with_index do |slot, slot_index|
-        slot[dimension_id] = term_class.new("#{dimension_id}@#{slot_index}")
-      end
-    end
-
-    def delete_terms(dimension_id)
-      slots.each do |slot|
-        slot[dimension_id] = nil
       end
     end
   end

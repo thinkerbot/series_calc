@@ -1,9 +1,9 @@
-require 'series_calc/timeframe'
+require 'series_calc/controller'
 require 'series_calc/command/message'
 
 module SeriesCalc
   module Command
-    class Controller
+    class Controller < SeriesCalc::Controller
       class << self
         def default_start_time
           Time.parse(Time.now.strftime("%Y-%m-%d %H:00:00"))
@@ -27,15 +27,14 @@ module SeriesCalc
         end
 
         def create(options = {})
-          options = options.dup
+          timeseries = Timeseries.create(
+            :start_time => options[:start_time] || default_start_time,
+            :n_steps    => options[:n_steps] || default_n_steps,
+            :period     => options[:period] || default_period,
+          )
+          timeframe  = Timeframe.new(timeseries)
 
-          options[:start_time] ||= default_start_time
-          options[:n_steps]    ||= default_n_steps
-          options[:period]     ||= default_period
-          options[:dimension_types] ||= dimension_types
-          timeframe  = Timeframe.new(options)
-
-          new(timeframe)
+          new(timeframe, dimension_types)
         end
 
         def dimension_types
@@ -49,16 +48,18 @@ module SeriesCalc
         'n_steps'                 => nil,
       }
 
-      attr_reader :timeframe
       attr_reader :logger
 
-      def initialize(timeframe)
-        @timeframe = timeframe
+      def initialize(timeframe, dimension_types = {})
+        super
         @logger = Logging.logger[self]
       end
 
       def route(message)
         raise NotImplementedError
+      end
+
+      def unroutable(message)
       end
     end
   end
