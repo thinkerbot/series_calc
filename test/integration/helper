@@ -1,3 +1,7 @@
 # Setup test paths
 export PATH="$PWD/vendor/ts/bin:$PATH"
 export SERIES_CALC_ENVIRONMENT=test
+
+strip_comments () {
+  sed -e 's/#.*//' "$@"
+}

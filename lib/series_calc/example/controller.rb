@@ -20,6 +20,7 @@ module SeriesCalc
 
       def get_data(message)
         set_slot_data
+        advance_to(message.creation_time)
 
         dimension_ids = message.content[:headers]
         enum = timeframe.data_for(dimension_ids)
@@ -28,6 +29,7 @@ module SeriesCalc
 
       def get_values(message)
         set_slot_data
+        advance_to(message.creation_time)
 
         dimension_ids = message.content[:headers]
         enum = timeframe.values_for(dimension_ids)

@@ -8,27 +8,12 @@ input="$ts_test_dir/input"
 
 test_series_calc () {
 cat > "$input" <<DOC
-2010-01-01T00:30:00Z PUT DATA   a/one 1
-2010-01-01T01:00:00Z PUT DATA   a/one 2
-2010-01-01T01:00:00Z GET VALUES table/0 a/one
-DOC
-
-series_calc "$input" | assert_output "\
-2010-01-01T01:00:00Z PUT VALUES table/0 a/one
-  2010-01-01T00:00:00Z 0
-  2010-01-01T00:15:00Z 0
-  2010-01-01T00:30:00Z 1
-  2010-01-01T00:45:00Z 1
-  2010-01-01T01:00:00Z 2
-
-"
-}
-
-test_series_calc_with_graph () {
-cat > "$input" <<DOC
+# a node with two children
 2010-01-01T00:00:00Z PUT GRAPH  a/one
 2010-01-01T00:00:00Z PUT GRAPH  b/one a/one
 2010-01-01T00:00:00Z PUT GRAPH  b/two a/one
+
+# data on each slot time
 2010-01-01T00:00:00Z PUT DATA   b/one 0
 2010-01-01T00:00:00Z PUT DATA   b/two 0
 2010-01-01T00:30:00Z PUT DATA   b/one 1
@@ -36,15 +21,82 @@ cat > "$input" <<DOC
 2010-01-01T01:00:00Z PUT DATA   b/one 3
 2010-01-01T01:00:00Z PUT DATA   b/two 4
 2010-01-01T01:00:00Z GET VALUES table/0 a/one b/one b/two
+
+# advance graph, overwriting previous data
+2010-01-01T01:00:00Z PUT DATA   b/two 5
+2010-01-01T01:15:00Z PUT DATA   b/one 6
+2010-01-01T01:15:00Z PUT DATA   b/two 7
+2010-01-01T01:30:00Z PUT DATA   b/one 8
+2010-01-01T01:30:00Z PUT DATA   b/two 9
+2010-01-01T01:30:00Z GET VALUES table/0 a/one b/one b/two
+
+# advance graph, use data off slot times..
+2010-01-01T01:30:01Z PUT DATA   b/one 10
+2010-01-01T01:30:01Z PUT DATA   b/two 11
+
+# and overridden by later data...
+2010-01-01T01:45:01Z PUT DATA   b/one 12
+2010-01-01T01:45:01Z PUT DATA   b/two 13
+2010-01-01T02:00:00Z PUT DATA   b/one 14
+2010-01-01T02:00:00Z PUT DATA   b/two 15
+
+# and data for times past the get...
+2010-01-01T02:10:00Z PUT DATA   b/one 16
+2010-01-01T02:10:00Z PUT DATA   b/two 17
+2010-01-01T02:00:01Z GET VALUES table/0 a/one b/one b/two
+
+# don't advance the get...
+2010-01-01T02:14:59Z GET VALUES table/0 a/one b/one b/two
+
+# and now advance the get...
+2010-01-01T02:15:00Z GET VALUES table/0 a/one b/one b/two
+
+# and now advance beyond the end of data
+2010-01-01T02:45:00Z GET VALUES table/0 a/one b/one b/two
 DOC
 
-series_calc "$input" | assert_output "\
+strip_comments "$input" | series_calc | assert_output "\
 2010-01-01T01:00:00Z PUT VALUES table/0 a/one b/one b/two
   2010-01-01T00:00:00Z 0 0 0
   2010-01-01T00:15:00Z 0 0 0
   2010-01-01T00:30:00Z 3 1 2
   2010-01-01T00:45:00Z 3 1 2
   2010-01-01T01:00:00Z 7 3 4
+
+2010-01-01T01:30:00Z PUT VALUES table/0 a/one b/one b/two
+  2010-01-01T00:30:00Z 3 1 2
+  2010-01-01T00:45:00Z 3 1 2
+  2010-01-01T01:00:00Z 8 3 5
+  2010-01-01T01:15:00Z 13 6 7
+  2010-01-01T01:30:00Z 17 8 9
+
+2010-01-01T02:00:01Z PUT VALUES table/0 a/one b/one b/two
+  2010-01-01T01:00:00Z 8 3 5
+  2010-01-01T01:15:00Z 13 6 7
+  2010-01-01T01:30:00Z 17 8 9
+  2010-01-01T01:45:00Z 21 10 11
+  2010-01-01T02:00:00Z 29 14 15
+
+2010-01-01T02:14:59Z PUT VALUES table/0 a/one b/one b/two
+  2010-01-01T01:00:00Z 8 3 5
+  2010-01-01T01:15:00Z 13 6 7
+  2010-01-01T01:30:00Z 17 8 9
+  2010-01-01T01:45:00Z 21 10 11
+  2010-01-01T02:00:00Z 29 14 15
+
+2010-01-01T02:15:00Z PUT VALUES table/0 a/one b/one b/two
+  2010-01-01T01:15:00Z 13 6 7
+  2010-01-01T01:30:00Z 17 8 9
+  2010-01-01T01:45:00Z 21 10 11
+  2010-01-01T02:00:00Z 29 14 15
+  2010-01-01T02:15:00Z 33 16 17
+
+2010-01-01T02:45:00Z PUT VALUES table/0 a/one b/one b/two
+  2010-01-01T01:45:00Z 21 10 11
+  2010-01-01T02:00:00Z 29 14 15
+  2010-01-01T02:15:00Z 33 16 17
+  2010-01-01T02:30:00Z 33 16 17
+  2010-01-01T02:45:00Z 33 16 17
 
 "
 }

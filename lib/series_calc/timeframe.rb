@@ -51,7 +51,7 @@ module SeriesCalc
       updated_slots = []
 
       cutoff = current_time - offset
-      while next_time < cutoff
+      while next_time <= cutoff
         next_slot = @slots_enum.next
         next_slot.time = next_time
         updated_slots << next_slot
