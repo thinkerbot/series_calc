@@ -53,9 +53,9 @@ module SeriesCalc
     end
 
     def clear_unreachable_data
-      min_slot_time = timeframe.min_slot_time
+      start_time = timeframe.start_time
       dimensions.each_value do |dimension|
-        dimension.clear_data_before(min_slot_time)
+        dimension.clear_data_before(start_time)
       end
       self
     end

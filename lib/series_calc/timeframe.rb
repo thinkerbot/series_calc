@@ -7,8 +7,10 @@ module SeriesCalc
   class Timeframe
     attr_reader :timeseries
     attr_reader :slots
+    attr_reader :current_time
+    attr_reader :offset
 
-    def initialize(timeseries)
+    def initialize(timeseries, current_time = nil)
       if timeseries.n_steps.nil?
         raise "cannot create slots from unbounded timeseries"
       end
@@ -18,18 +20,23 @@ module SeriesCalc
       @timeseries.each_with_index do |time, index|
         @slots << Slot.new(time, index)
       end
+      @current_time = current_time || timeseries.stop_time
+      @offset = @current_time - timeseries.stop_time
 
       @slots_enum = @slots.cycle
-      @current_timeseries_index = @timeseries.n_steps
-      @current_slot_index = 0
+      @next_timeseries_index = @timeseries.n_steps
     end
 
     def slot_times
       slots.map(&:time).sort
     end
 
-    def min_slot_time
+    def start_time
       slot_times.first
+    end
+
+    def stop_time
+      slot_times.last
     end
 
     def next_slot
@@ -37,18 +44,20 @@ module SeriesCalc
     end
 
     def next_time
-      timeseries.at(@current_timeseries_index + 1)
+      timeseries.at(@next_timeseries_index)
     end
 
-    def advance_to(time)
+    def advance_to(current_time)
       updated_slots = []
 
-      while next_time < time
+      cutoff = current_time - offset
+      while next_time < cutoff
         next_slot = @slots_enum.next
         next_slot.time = next_time
         updated_slots << next_slot
-        @current_timeseries_index += 1
+        @next_timeseries_index += 1
       end
+      @current_time = current_time
 
       updated_slots
     end
